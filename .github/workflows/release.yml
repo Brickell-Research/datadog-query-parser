@@ -64,7 +64,7 @@ jobs:
 
       - name: Publish to Hex
         env:
-          HEXPM_API_KEY: ${{ secrets.HEX_RELEASE_KEY }}
+          HEXPM_API_KEY: ${{ secrets.HEXPM_API_KEY }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           echo "Publishing datadog_query v${VERSION} to Hex..."
