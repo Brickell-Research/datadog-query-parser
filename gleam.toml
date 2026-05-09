@@ -1,0 +1,14 @@
+name = "datadog_query"
+version = "1.0.0"
+description = "Primitives for emitting and linting Datadog query syntax."
+licences = ["GPL-3.0"]
+
+repository = { type = "github", user = "Brickell-Research", repo = "datadog-query-parser" }
+
+target = "erlang"
+
+[dependencies]
+gleam_stdlib = ">= 0.70.0 and < 1.0.2"
+
+[dev_dependencies]
+gleeunit = ">= 1.0.2"

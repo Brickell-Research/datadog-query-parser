@@ -1,0 +1,96 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test-erlang:
+    name: Test Erlang Target
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Setup BEAM (Erlang + Gleam + rebar3)
+        uses: erlef/setup-beam@fc68ffb90438ef2936bbb3251622353b3dcb2f93 # v1
+        with:
+          otp-version: "27"
+          gleam-version: "1.16.0"
+          rebar3-version: "3.25.0"
+
+      - name: Restore Gleam dependency cache
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.cache/gleam
+            build
+          key: ${{ runner.os }}-gleam-erlang-${{ hashFiles('manifest.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-gleam-erlang-
+            ${{ runner.os }}-gleam-
+
+      - name: Test datadog_query
+        run: gleam test
+
+      - name: Save Gleam cache
+        if: github.event_name == 'push'
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.cache/gleam
+            build
+          key: ${{ runner.os }}-gleam-erlang-${{ hashFiles('manifest.toml') }}
+
+  test-javascript:
+    name: Test JavaScript Target
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Setup BEAM (Erlang + Gleam + rebar3)
+        uses: erlef/setup-beam@fc68ffb90438ef2936bbb3251622353b3dcb2f93 # v1
+        with:
+          otp-version: "27"
+          gleam-version: "1.16.0"
+          rebar3-version: "3.25.0"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: "20"
+
+      - name: Restore Gleam dependency cache
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.cache/gleam
+            build
+          key: ${{ runner.os }}-gleam-js-${{ hashFiles('manifest.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-gleam-js-
+            ${{ runner.os }}-gleam-
+
+      - name: Test datadog_query (JavaScript)
+        run: gleam test --target javascript
+
+      - name: Save Gleam cache
+        if: github.event_name == 'push'
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.cache/gleam
+            build
+          key: ${{ runner.os }}-gleam-js-${{ hashFiles('manifest.toml') }}

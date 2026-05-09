@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (e.g., v1.0.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Publish to Hex
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          persist-credentials: false
+
+      - name: Setup BEAM (Erlang + Gleam)
+        uses: erlef/setup-beam@fc68ffb90438ef2936bbb3251622353b3dcb2f93 # v1
+        with:
+          otp-version: "27"
+          gleam-version: "1.16.0"
+          rebar3-version: "3.25.0"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: "20"
+
+      - name: Extract version
+        id: version
+        run: |
+          VERSION=$(grep '^version' gleam.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Publishing datadog_query v${VERSION}"
+
+      - name: Verify tag matches gleam.toml version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          EXPECTED="v${VERSION}"
+          if [ "${TAG}" != "${EXPECTED}" ]; then
+            echo "Tag '${TAG}' does not match gleam.toml version '${EXPECTED}'"
+            exit 1
+          fi
+
+      - name: Run tests before publishing
+        run: |
+          gleam test
+          gleam test --target javascript
+
+      - name: Publish to Hex
+        env:
+          HEXPM_API_KEY: ${{ secrets.HEX_RELEASE_KEY }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          echo "Publishing datadog_query v${VERSION} to Hex..."
+          gleam publish --yes
