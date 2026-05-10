@@ -1,5 +1,5 @@
 name = "datadog_query"
-version = "1.0.0"
+version = "2.0.0"
 description = "Primitives for emitting and linting Datadog query syntax."
 licences = ["GPL-3.0"]
 
